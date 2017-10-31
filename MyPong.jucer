@@ -83,6 +83,6 @@
   <JUCEOPTIONS/>
   <LIVE_SETTINGS>
     <WINDOWS systemHeaderPath="C:\Program Files (x86)\Windows Kits\10\Include\10.0.16299.0"
-             liveWindowsTargetPlatformVersion="10.0.16299.0" headerPath="D:\dev3\tweeny-master\include"/>
+             liveWindowsTargetPlatformVersion="10.0.16299.0" headerPath=""/>
   </LIVE_SETTINGS>
 </JUCERPROJECT>
