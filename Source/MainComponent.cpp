@@ -9,7 +9,6 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 
 #include <vector>
-#include "tweeny.h"
 
 //==============================================================================
 /*
@@ -22,7 +21,6 @@ const int WINDOW_WIDTHF = 1024.0f;
 const int WINDOW_HEIGHTF = 600.0f;
 
 using namespace std;
-using namespace tweeny;
 
 // GAME DATA
 struct Player {
@@ -44,10 +42,6 @@ struct Player {
 
 	// Uniform scale of the player
 	float scale = 1.0f;
-
-	// Bounce animation - bad pattern, should do something decoupled maybe?
-	bool isAnimating = false;
-	tween<float> bounce = from(1.30f).to(1.0f).during(10000.0f).via(tweeny::easing::bounceOut);
 };
 
 struct Ball {
@@ -64,14 +58,29 @@ struct Ball {
 
 	// Scale for bounce animation
 	float scale = 1.0f;
-
-	// Shitty way of implementing an animation imo... idk... i dont like it
-	bool isAnimating = false;
-	tween<float> bounce = from(1.30f).to(1.0f).during(10000.0f).via(tweeny::easing::bounceOut);
 };
 
 
 
+
+
+struct GameState {
+    // Game Objects
+	vector<Player> players;
+	vector<Ball> balls;
+	
+	// Data
+	float timeSpent = 0.0f;
+	
+	// Input
+	KeyPress restartGame{KeyPress::F5Key};
+	
+	// Extra
+	float lineY = 0.0f; // Middle line for animation
+};
+
+// Hehe turned the game over state into its own object for checking
+// if it's game over or not. Should be a functor tbh.
 struct GameOverState {
 	enum class GameMode : int { Timed = 0, MaxScore };
 	
@@ -100,22 +109,6 @@ struct GameOverState {
 	int maxScore = 10;
 	float timeLeft = 0.0f;
 	float matchTime = 60.0f;
-};
-
-
-struct GameState {
-    // Game Objects
-	vector<Player> players;
-	vector<Ball> balls;
-	
-	// Data
-	float timeSpent = 0.0f;
-	
-	// Input
-	KeyPress restartGame{KeyPress::F5Key};
-	
-	// Extra
-	float lineY = 0.0f; // Middle line for animation
 };
 
 namespace GameHelpers {
@@ -240,7 +233,7 @@ public:
 
 	void update() {
 		if (GameHelpers::isKeyDown(state.restartGame)) {
-			restart();
+			PongHelpers::resetGame(state);
 		}
 
 		// Need time since last update.
@@ -281,28 +274,14 @@ private:
 				GameHelpers::moveVertical(p.body, p.speed * dt);
 				GameHelpers::clampVertical(p.body);
 			}
-
-			if (p.isAnimating) {
-				auto v = p.bounce.step(dt);
-				p.scale = v;
-				p.isAnimating = p.bounce.progress() < 1.0f;
-			}
 		}
 	}
 
 	void updateBalls(float dt) {
-		for (auto& b : state.balls)
-		{
+		for (auto& b : state.balls) {
 			ballMove(b, dt);
 			ballCollide(b);
 			ballScore(b);
-            
-			if (b.isAnimating)
-			{
-				auto v = b.bounce.step(dt);
-				b.scale = v;
-				b.isAnimating = b.bounce.progress() < 1.0f;
-			}
 		}
 	}
 
@@ -343,13 +322,6 @@ private:
 					auto bounceAngle = PongHelpers::getBounceAngle(p.body, intersectionBody);
 					PongHelpers::setBallWithBounceAngle(b, bounceAngle);
 					PongHelpers::moveToPaddleEdge(b, p);
-					
-					p.bounce.seek(0.0f, true);
-					p.isAnimating = true;
-
-					b.isAnimating = true;
-					b.bounce.seek(0.0f, true);
-
 				}
 			}
 		}
@@ -369,7 +341,7 @@ private:
 
 class GameUI : public Component {
 public:
-	GameUI(GameState& gameState) : gameState(gameState) {}
+	GameUI(GameState& gameState) : state(gameState) {}
 	
 	void paint(Graphics& g) override {
 	    paintBackground(g);
@@ -379,8 +351,6 @@ public:
 
 private:
     void paintGame(Graphics& g) {
-		paintBackground(g);
-
 		// Players
 		for (auto & p : state.players) {
 			g.setColour(p.colour);
@@ -406,22 +376,13 @@ private:
 		}
 	}
 	
-	void paintBackground(Graphics &g) {
-		g.fillAll(Colour(30, 30, 30));
-
-		g.setColour(Colour(240, 240, 240));
-		const Line<float> line(WINDOW_WIDTHF / 2.0f, -48.0f + lineY, WINDOW_WIDTHF / 2.0f, WINDOW_HEIGHTF + 48.0f);
-		float dashLengths[2] = { 16.0f, 32.0f };
-		g.drawDashedLine(line, &dashLengths[0], 2, 16.0f);
-	}
-	
 	void paintHUD(Graphics& g) {
-		String p1Score(gameState.players[0].score);
-		String p2Score(gameState.players[1].score);
-		String nBalls(gameState.balls.size());
+		String p1Score(state.players[0].score);
+		String p2Score(state.players[1].score);
+		String nBalls(state.balls.size());
 		
 		auto row(getLocalBounds().removeFromTop(32));
-		g.setColour(Colour(30,30,30));
+		//g.setColour(Colour(30,30,30));
 		//g.fillRect(row);
 
 		g.setColour(Colour(240, 240, 240));
@@ -429,8 +390,16 @@ private:
 		g.drawText(p2Score, row.removeFromRight(200).withTrimmedRight(8), Justification::centredRight);
 		g.drawText(nBalls, row, Justification::centred);
     }
+    void paintBackground(Graphics &g) {
+		g.fillAll(Colour(30, 30, 30));
+
+		g.setColour(Colour(240, 240, 240));
+		const Line<float> line(WINDOW_WIDTHF / 2.0f, -48.0f + state.lineY, WINDOW_WIDTHF / 2.0f, WINDOW_HEIGHTF + 48.0f);
+		float dashLengths[2] = { 16.0f, 32.0f };
+		g.drawDashedLine(line, &dashLengths[0], 2, 16.0f);
+	}
 	
-	GameState& gameState;
+	GameState& state;
 };
 
 // By using the MainContentComponent like this we can "trick" the JIT 
