@@ -2,8 +2,10 @@
 
 #include "DataModel.h"
 
+/*! These are more game specific and will probably have to be adjusted for future use */
 namespace PongHelpers {
 
+  /*! Bounce angle calculation between player and ball */
   float getBounceAngle(const Rectangle<float>& player, const Rectangle<float>& intersection) {
     const static float MAXBOUNCEANGLE = 5.0f * float_Pi / 12.0f;
 
@@ -15,6 +17,7 @@ namespace PongHelpers {
     return normalizedRelativeIntersectionY * MAXBOUNCEANGLE;
   }
 
+  /*! Sets the movement speeds based on the bounce angles on a ball */
   void setBallWithBounceAngle(Ball& b, float bounceAngle) {
     if (b.speedx > 0) {
       b.speedx = b.realSpeed *  -cos(bounceAngle);
@@ -25,6 +28,7 @@ namespace PongHelpers {
     b.speedy = b.realSpeed * -sin(bounceAngle);
   }
 
+  /*! Is supposed to move the ball to the edge of the player if it gets inside */
   void moveToPaddleEdge(Ball& b, Player& p) {
     if (b.body.getX() > (WINDOW_WIDTHF*0.5f)) {
       // On the right side going left
@@ -35,6 +39,7 @@ namespace PongHelpers {
     }
   }
 
+  /*! Resets the ball to the middle */
   void resetBall(Ball& b) {
     b.body = Rectangle<float>((WINDOW_WIDTHF / 2.0f) - (b.body.getWidth() / 2.0f)
       , (WINDOW_HEIGHTF / 2.0f) - (b.body.getHeight() / 2.0f)
@@ -43,6 +48,7 @@ namespace PongHelpers {
     b.realSpeed = 100.0f;
   }
 
+  /*! Clears the gamestate */
   void resetGame(GameState& state) {
       // Reload players
     state.players.clear();

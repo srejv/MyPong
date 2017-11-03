@@ -1,9 +1,11 @@
 #pragma once
 
+/*! This was just supposed to be the HUD but it turned out to be the whole rendering class. */
 class GameUI : public Component {
 public:
   GameUI(GameState& gameState) : state(gameState) {}
 
+  /!* Here we do our rendering based on the GameState */
   void paint(Graphics& g) override {
     paintBackground(g);
     paintGame(g);
@@ -43,9 +45,6 @@ private:
     String nBalls(state.balls.size());
 
     auto row(getLocalBounds().removeFromTop(32));
-    //g.setColour(Colour(30,30,30));
-    //g.fillRect(row);
-
     g.setColour(Colour(240, 240, 240));
     g.drawText(p1Score, row.removeFromLeft(200).withTrimmedLeft(8), Justification::centredLeft);
     g.drawText(p2Score, row.removeFromRight(200).withTrimmedRight(8), Justification::centredRight);
@@ -62,6 +61,6 @@ private:
     g.drawDashedLine(line, &dashLengths[0], 2, 16.0f);
   }
 
-  // Reference (guaranteed pointer?) to the GameState. 
+//===========================================================
   GameState& state;
 };

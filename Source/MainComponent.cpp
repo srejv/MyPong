@@ -26,16 +26,17 @@ using namespace std;
 #include "Game.h"
 #include "GameUI.h"
 
-// By using the MainContentComponent like this we can "trick" the JIT
-//   to work for us in the JUCE 5 live build engine.
+/*! By using the MainContentComponent like this we can "trick" the JIT
+     to work for us in the JUCE 5 live build engine.
+ */
 class MainContentComponent   : public AnimatedAppComponent
 {
 public:
   //==============================================================================
   MainContentComponent() : game(), gameUI(game.getState()) {
     addAndMakeVisible(gameUI);
-    setSize (WINDOW_WIDTH, WINDOW_HEIGHT);
-    setFramesPerSecond (60);
+    setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    setFramesPerSecond(60);
   }
 
   ~MainContentComponent() { }
