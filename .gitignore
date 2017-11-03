@@ -63,4 +63,5 @@ profile
 **/doxygen/build
 **/JuceLibraryCode
 **/Builds
+**/doc
 extras/Projucer/JUCECompileEngine.dylib
